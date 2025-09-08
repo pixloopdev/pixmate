@@ -486,7 +486,7 @@ const Dashboard: React.FC = () => {
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">System initialized</p>
-                  <p className="text-xs text-gray-500">Welcome to Metahire CRM</p>
+                  <p className="text-xs text-gray-500">Welcome to Pixmate CRM</p>
                 </div>
               </div>
             </div>
