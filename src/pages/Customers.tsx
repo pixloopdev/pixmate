@@ -198,6 +198,18 @@ const Customers: React.FC = () => {
     e.preventDefault();
     if (!selectedCustomer || !profile) return;
 
+    console.log('Saving payment with data:', {
+      customer_id: selectedCustomer.id,
+      amount: parseFloat(paymentForm.amount),
+      currency: paymentForm.currency,
+      payment_date: paymentForm.payment_date || null,
+      due_date: paymentForm.due_date || null,
+      status: paymentForm.status,
+      payment_method: paymentForm.payment_method || null,
+      notes: paymentForm.notes || null,
+      created_by: profile.id
+    });
+
     try {
       const paymentData = {
         customer_id: selectedCustomer.id,
@@ -206,31 +218,44 @@ const Customers: React.FC = () => {
         payment_date: paymentForm.payment_date || null,
         due_date: paymentForm.due_date || null,
         status: paymentForm.status,
-        payment_method: paymentForm.payment_method,
-        notes: paymentForm.notes,
+        payment_method: paymentForm.payment_method || null,
+        notes: paymentForm.notes || null,
         created_by: profile.id
       };
 
       if (editingPayment) {
+        const updateData = { ...paymentData };
+        delete updateData.created_by; // Don't update created_by on edit
+        updateData.updated_at = new Date().toISOString();
+        
         const { error } = await supabase
           .from('payments')
-          .update(paymentData)
+          .update(updateData)
           .eq('id', editingPayment.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Update error:', error);
+          throw error;
+        }
       } else {
         const { error } = await supabase
           .from('payments')
           .insert([paymentData]);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Insert error:', error);
+          throw error;
+        }
       }
 
       setShowPaymentModal(false);
+      setEditingPayment(null);
+      setSelectedCustomer(null);
       fetchPayments();
+      alert(editingPayment ? 'Payment updated successfully!' : 'Payment added successfully!');
     } catch (error) {
       console.error('Error saving payment:', error);
-      alert('Error saving payment. Please try again.');
+      alert(`Error saving payment: ${error.message || 'Please try again.'}`);
     }
   };
 

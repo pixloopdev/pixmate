@@ -73,6 +73,7 @@ export interface Payment {
   id: string;
   customer_id: string;
   amount: number;
+  currency: string;
   payment_date: string | null;
   due_date: string | null;
   status: 'pending' | 'paid' | 'overdue' | 'cancelled';
