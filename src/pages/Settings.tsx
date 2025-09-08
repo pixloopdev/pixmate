@@ -171,7 +171,7 @@ const Settings: React.FC = () => {
                 </button>
                 
                 <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                  <p className="font-medium text-gray-900">Change Password</p>
+                  <p className="font-medium text-gray-900">Pixmate CRM Settings</p>
                   <p className="text-sm text-gray-500">Update your account password</p>
                 </button>
                 

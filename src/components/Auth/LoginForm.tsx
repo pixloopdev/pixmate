@@ -54,6 +54,7 @@ const LoginForm: React.FC = () => {
               <Building2 className="h-12 w-12 text-blue-600" />
             </div>
             <h1 className="text-3xl font-bold text-gray-900">Metahire</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Pixmate CRM</h1>
             <p className="text-gray-600 mt-2">CRM System Login</p>
           </div>
 

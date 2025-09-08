@@ -44,7 +44,7 @@ const Sidebar: React.FC = () => {
         <div className="flex items-center space-x-3">
           <Building2 className="h-8 w-8 text-blue-400" />
           <div>
-            <h1 className="text-xl font-bold">Metahire</h1>
+            <h1 className="text-xl font-bold">Pixmate CRM</h1>
             <p className="text-sm text-slate-400">CRM System</p>
           </div>
         </div>
