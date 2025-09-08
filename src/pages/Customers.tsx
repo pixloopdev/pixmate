@@ -198,17 +198,16 @@ const Customers: React.FC = () => {
     e.preventDefault();
     if (!selectedCustomer || !profile) return;
 
-    console.log('Saving payment with data:', {
-      customer_id: selectedCustomer.id,
-      amount: parseFloat(paymentForm.amount),
-      currency: paymentForm.currency,
-      payment_date: paymentForm.payment_date || null,
-      due_date: paymentForm.due_date || null,
-      status: paymentForm.status,
-      payment_method: paymentForm.payment_method || null,
-      notes: paymentForm.notes || null,
-      created_by: profile.id
-    });
+    // Validate required fields
+    if (!paymentForm.amount || isNaN(parseFloat(paymentForm.amount))) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    if (parseFloat(paymentForm.amount) <= 0) {
+      alert('Amount must be greater than 0');
+      return;
+    }
 
     try {
       const paymentData = {
@@ -223,29 +222,51 @@ const Customers: React.FC = () => {
         created_by: profile.id
       };
 
+      console.log('Attempting to save payment:', paymentData);
+      console.log('Selected customer:', selectedCustomer);
+      console.log('Current profile:', profile);
+
       if (editingPayment) {
-        const updateData = { ...paymentData };
-        delete updateData.created_by; // Don't update created_by on edit
-        updateData.updated_at = new Date().toISOString();
+        const { created_by, ...updateData } = paymentData;
+        const finalUpdateData = {
+          ...updateData,
+          updated_at: new Date().toISOString()
+        };
         
+        console.log('Updating payment with data:', finalUpdateData);
         const { error } = await supabase
           .from('payments')
-          .update(updateData)
+          .update(finalUpdateData)
           .eq('id', editingPayment.id);
         
         if (error) {
-          console.error('Update error:', error);
+          console.error('Payment update error:', error);
+          console.error('Error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
           throw error;
         }
+        console.log('Payment updated successfully');
       } else {
+        console.log('Inserting new payment with data:', paymentData);
         const { error } = await supabase
           .from('payments')
           .insert([paymentData]);
         
         if (error) {
-          console.error('Insert error:', error);
+          console.error('Payment insert error:', error);
+          console.error('Error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
           throw error;
         }
+        console.log('Payment inserted successfully');
       }
 
       setShowPaymentModal(false);
@@ -254,8 +275,15 @@ const Customers: React.FC = () => {
       fetchPayments();
       alert(editingPayment ? 'Payment updated successfully!' : 'Payment added successfully!');
     } catch (error) {
-      console.error('Error saving payment:', error);
-      alert(`Error saving payment: ${error.message || 'Please try again.'}`);
+      console.error('Unexpected error saving payment:', error);
+      
+      let errorMessage = 'Unknown error occurred';
+      if (error && typeof error === 'object' && 'message' in error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      alert(`Error saving payment: ${errorMessage}. Check console for details.`);
     }
   };
 
