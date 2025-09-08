@@ -213,12 +213,12 @@ const Customers: React.FC = () => {
       const paymentData = {
         customer_id: selectedCustomer.id,
         amount: parseFloat(paymentForm.amount),
-        currency: paymentForm.currency,
-        payment_date: paymentForm.payment_date || null,
-        due_date: paymentForm.due_date || null,
+        currency: paymentForm.currency || 'USD',
+        payment_date: paymentForm.payment_date ? paymentForm.payment_date : null,
+        due_date: paymentForm.due_date ? paymentForm.due_date : null,
         status: paymentForm.status,
-        payment_method: paymentForm.payment_method || null,
-        notes: paymentForm.notes || null,
+        payment_method: paymentForm.payment_method ? paymentForm.payment_method : null,
+        notes: paymentForm.notes ? paymentForm.notes : null,
         created_by: profile.id
       };
 
@@ -227,16 +227,23 @@ const Customers: React.FC = () => {
       console.log('Current profile:', profile);
 
       if (editingPayment) {
-        const { created_by, ...updateData } = paymentData;
-        const finalUpdateData = {
-          ...updateData,
+        // For updates, don't include created_by and ensure we have all required fields
+        const updateData = {
+          customer_id: selectedCustomer.id,
+          amount: parseFloat(paymentForm.amount),
+          currency: paymentForm.currency || 'USD',
+          payment_date: paymentForm.payment_date ? paymentForm.payment_date : null,
+          due_date: paymentForm.due_date ? paymentForm.due_date : null,
+          status: paymentForm.status,
+          payment_method: paymentForm.payment_method ? paymentForm.payment_method : null,
+          notes: paymentForm.notes ? paymentForm.notes : null,
           updated_at: new Date().toISOString()
         };
         
-        console.log('Updating payment with data:', finalUpdateData);
+        console.log('Updating payment with data:', updateData);
         const { error } = await supabase
           .from('payments')
-          .update(finalUpdateData)
+          .update(updateData)
           .eq('id', editingPayment.id);
         
         if (error) {
