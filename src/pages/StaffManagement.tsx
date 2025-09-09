@@ -16,6 +16,12 @@ const StaffManagement: React.FC = () => {
   const [assignedCampaigns, setAssignedCampaigns] = useState<any[]>([]);
   const [showDeleteStaffModal, setShowDeleteStaffModal] = useState(false);
   const [staffToDelete, setStaffToDelete] = useState<Profile | null>(null);
+  const [showEditStaffModal, setShowEditStaffModal] = useState(false);
+  const [staffToEdit, setStaffToEdit] = useState<Profile | null>(null);
+  const [editStaffForm, setEditStaffForm] = useState({
+    full_name: '',
+    email: '',
+  });
   const [newStaff, setNewStaff] = useState({
     email: '',
     password: '',
@@ -193,6 +199,46 @@ const StaffManagement: React.FC = () => {
     setShowDeleteStaffModal(true);
   };
 
+  const handleEditStaff = (staff: Profile) => {
+    setStaffToEdit(staff);
+    setEditStaffForm({
+      full_name: staff.full_name || '',
+      email: staff.email,
+    });
+    setShowEditStaffModal(true);
+  };
+
+  const handleUpdateStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffToEdit) return;
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editStaffForm.full_name || null,
+          email: editStaffForm.email,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', staffToEdit.id);
+
+      if (error) {
+        setError(`Error updating staff: ${error.message}`);
+      } else {
+        setSuccess('Staff member updated successfully!');
+        setShowEditStaffModal(false);
+        setStaffToEdit(null);
+        fetchStaff();
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (error: any) {
+      setError(`Error updating staff: ${error.message}`);
+    }
+  };
+
   const confirmRemoveStaff = async () => {
     if (!staffToDelete) return;
 
@@ -364,6 +410,12 @@ const StaffManagement: React.FC = () => {
                         className="text-blue-600 hover:text-blue-900 mr-4"
                       >
                         Assign Campaigns
+                      </button>
+                      <button 
+                        onClick={() => handleEditStaff(member)}
+                        className="text-green-600 hover:text-green-900 mr-4"
+                      >
+                        Edit
                       </button>
                       <button 
                         onClick={() => handleRemoveStaff(member)}
@@ -568,6 +620,70 @@ const StaffManagement: React.FC = () => {
                 Done
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Staff Modal */}
+      {showEditStaffModal && staffToEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Edit Staff Member</h2>
+              <button
+                onClick={() => setShowEditStaffModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateStaff} className="space-y-4">
+              <div>
+                <label htmlFor="edit_full_name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <input
+                  id="edit_full_name"
+                  type="text"
+                  value={editStaffForm.full_name}
+                  onChange={(e) => setEditStaffForm({ ...editStaffForm, full_name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter full name"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="edit_email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  id="edit_email"
+                  type="email"
+                  required
+                  value={editStaffForm.email}
+                  onChange={(e) => setEditStaffForm({ ...editStaffForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter email address"
+                />
+              </div>
+              
+              <div className="flex space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowEditStaffModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Update Staff Member
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
