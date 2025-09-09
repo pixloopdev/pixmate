@@ -19,6 +19,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [staff, setStaff] = useState<Profile[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [staffCampaigns, setStaffCampaigns] = useState<Record<string, any[]>>({});
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Profile | null>(null);
@@ -36,6 +37,7 @@ const Dashboard: React.FC = () => {
     if (profile?.role === 'superadmin') {
       fetchStaff();
       fetchCampaigns();
+      fetchAllStaffCampaigns();
     }
   }, [profile]);
 
@@ -136,6 +138,35 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const fetchAllStaffCampaigns = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('campaign_assignments')
+        .select(`
+          staff_id,
+          campaigns(name)
+        `);
+
+      if (error) {
+        console.error('Error fetching staff campaigns:', error);
+      } else {
+        // Group campaigns by staff_id
+        const campaignsByStaff = (data || []).reduce((acc, assignment) => {
+          const staffId = assignment.staff_id;
+          if (!acc[staffId]) {
+            acc[staffId] = [];
+          }
+          acc[staffId].push(assignment.campaigns);
+          return acc;
+        }, {} as Record<string, any[]>);
+        
+        setStaffCampaigns(campaignsByStaff);
+      }
+    } catch (error) {
+      console.error('Error fetching staff campaigns:', error);
+    }
+  };
+
   const fetchCampaigns = async () => {
     try {
       const { data, error } = await supabase
@@ -214,6 +245,7 @@ const Dashboard: React.FC = () => {
         setShowAddStaffModal(false);
         setSuccess('');
         fetchStaff();
+        fetchAllStaffCampaigns();
       }, 2000);
     } catch (error: any) {
       setError(error.message);
@@ -238,6 +270,7 @@ const Dashboard: React.FC = () => {
       } else {
         setSuccess('Campaign assigned successfully!');
         fetchStaffCampaigns(selectedStaff.id);
+        fetchAllStaffCampaigns();
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (error: any) {
@@ -260,6 +293,7 @@ const Dashboard: React.FC = () => {
         if (selectedStaff) {
           fetchStaffCampaigns(selectedStaff.id);
         }
+        fetchAllStaffCampaigns();
         setTimeout(() => setSuccess(''), 3000);
       }
     } catch (error: any) {
@@ -662,6 +696,13 @@ const Dashboard: React.FC = () => {
                         >
                           <X className="h-4 w-4" />
                         </button>
+                        {staffCampaigns[member.id] && staffCampaigns[member.id].length > 0 && (
+                          <div className="mt-1">
+                            <p className="text-xs text-blue-600">
+                              Campaigns: {staffCampaigns[member.id].map(c => c.name).join(', ')}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
