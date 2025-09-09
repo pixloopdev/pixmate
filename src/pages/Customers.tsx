@@ -89,31 +89,15 @@ const Customers: React.FC = () => {
 
     try {
       setLoading(true);
-      let query = supabase.from('customers').select('*');
+      let query = supabase.from('customers').select(`
+        *,
+        leads(assigned_to)
+      `);
       
       // If not superadmin, only show customers from their converted leads
       if (profile.role !== 'superadmin') {
-        // Get lead IDs that are assigned to this user
-        const { data: userLeads, error: leadsError } = await supabase
-          .from('leads')
-          .select('id')
-          .eq('assigned_to', profile.id);
-
-        if (leadsError) {
-          console.error('Error fetching user leads:', leadsError);
-          setCustomers([]);
-          setLoading(false);
-          return;
-        }
-
-        const leadIds = userLeads?.map(lead => lead.id) || [];
-        if (leadIds.length === 0) {
-          setCustomers([]);
-          setLoading(false);
-          return;
-        }
-
-        query = query.in('lead_id', leadIds);
+        // For staff, show customers where they were the converter OR from their assigned leads
+        query = query.or(`converted_by.eq.${profile.id},leads.assigned_to.eq.${profile.id}`);
       }
 
       const { data, error } = await query.order('converted_at', { ascending: false });
