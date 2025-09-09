@@ -83,7 +83,28 @@ const Leads: React.FC = () => {
       `);
 
       if (profile?.role === 'staff') {
-        query = query.eq('assigned_to', profile.id);
+        // Staff can see leads assigned to them OR leads from campaigns they're assigned to
+        const { data: assignedCampaigns, error: campaignError } = await supabase
+          .from('campaign_assignments')
+          .select('campaign_id')
+          .eq('staff_id', profile.id);
+
+        if (campaignError) {
+          console.error('Error fetching assigned campaigns:', campaignError);
+          setLeads([]);
+          setLoading(false);
+          return;
+        }
+
+        const campaignIds = assignedCampaigns?.map(ca => ca.campaign_id) || [];
+        
+        if (campaignIds.length > 0) {
+          // Show leads that are either assigned to the staff member OR from their assigned campaigns
+          query = query.or(`assigned_to.eq.${profile.id},campaign_id.in.(${campaignIds.join(',')})`);
+        } else {
+          // If no campaigns assigned, only show directly assigned leads
+          query = query.eq('assigned_to', profile.id);
+        }
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
