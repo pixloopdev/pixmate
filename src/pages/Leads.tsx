@@ -1066,5 +1066,3 @@ const Leads: React.FC = () => {
 };
 
 export default Leads;
-
-export default Leads
