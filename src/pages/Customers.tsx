@@ -89,25 +89,55 @@ const Customers: React.FC = () => {
 
     try {
       setLoading(true);
-      let query = supabase.from('customers').select(`
-        *,
-        leads(assigned_to)
-      `);
       
-      // If not superadmin, only show customers from their converted leads
       if (profile.role !== 'superadmin') {
-        // For staff, show customers where they were the converter OR from their assigned leads
-        query = query.or(`converted_by.eq.${profile.id},leads.assigned_to.eq.${profile.id}`);
-      }
+        // First, get all lead IDs assigned to this staff member
+        const { data: assignedLeads, error: leadsError } = await supabase
+          .from('leads')
+          .select('id')
+          .eq('assigned_to', profile.id);
 
-      const { data, error } = await query.order('converted_at', { ascending: false });
+        if (leadsError) {
+          console.error('Error fetching assigned leads:', leadsError);
+          setCustomers([]);
+          return;
+        }
 
-      if (error) {
-        console.error('Error fetching customers:', error);
-        setCustomers([]);
+        const assignedLeadIds = assignedLeads?.map(lead => lead.id) || [];
+        
+        // Build the OR condition for customers
+        let orConditions = [`converted_by.eq.${profile.id}`];
+        if (assignedLeadIds.length > 0) {
+          orConditions.push(`lead_id.in.(${assignedLeadIds.join(',')})`);
+        }
+
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .or(orConditions.join(','))
+          .order('converted_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching customers:', error);
+          setCustomers([]);
+        } else {
+          console.log('Fetched customers:', data);
+          setCustomers(data || []);
+        }
       } else {
-        console.log('Fetched customers:', data);
-        setCustomers(data || []);
+        // For superadmin, fetch all customers
+        const { data, error } = await supabase
+          .from('customers')
+          .select('*')
+          .order('converted_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching customers:', error);
+          setCustomers([]);
+        } else {
+          console.log('Fetched customers:', data);
+          setCustomers(data || []);
+        }
       }
     } catch (error) {
       console.error('Error fetching customers:', error);
