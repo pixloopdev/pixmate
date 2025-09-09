@@ -718,13 +718,6 @@ const Dashboard: React.FC = () => {
                         >
                           <X className="h-4 w-4" />
                         </button>
-                        {staffCampaigns[member.id] && staffCampaigns[member.id].length > 0 && (
-                          <div className="mt-1">
-                            <p className="text-xs text-blue-600">
-                              Campaigns: {staffCampaigns[member.id].map(c => c.name).join(', ')}
-                            </p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   ))}
