@@ -31,6 +31,7 @@ const Leads: React.FC = () => {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedCampaignForUpload, setSelectedCampaignForUpload] = useState('');
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -277,12 +278,18 @@ const Leads: React.FC = () => {
         return;
       }
 
+      // Add campaign_id to each lead if selected
+      const leadsWithCampaign = parsedLeads.map(lead => ({
+        ...lead,
+        campaign_id: selectedCampaignForUpload || null
+      }));
+
       // Upload leads in batches
       const batchSize = 10;
       let uploaded = 0;
 
-      for (let i = 0; i < parsedLeads.length; i += batchSize) {
-        const batch = parsedLeads.slice(i, i + batchSize);
+      for (let i = 0; i < leadsWithCampaign.length; i += batchSize) {
+        const batch = leadsWithCampaign.slice(i, i + batchSize);
         
         const { error } = await supabase
           .from('leads')
@@ -296,11 +303,12 @@ const Leads: React.FC = () => {
         }
 
         uploaded += batch.length;
-        setUploadProgress((uploaded / parsedLeads.length) * 100);
+        setUploadProgress((uploaded / leadsWithCampaign.length) * 100);
       }
 
       setSuccess(`Successfully uploaded ${uploaded} leads!`);
       setCsvFile(null);
+      setSelectedCampaignForUpload('');
       fetchLeads();
       
       setTimeout(() => {
@@ -706,6 +714,27 @@ const Leads: React.FC = () => {
                     Selected: {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Assign to Campaign (Optional)
+                </label>
+                <select
+                  value={selectedCampaignForUpload}
+                  onChange={(e) => setSelectedCampaignForUpload(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">No campaign (assign later)</option>
+                  {campaigns.map((campaign) => (
+                    <option key={campaign.id} value={campaign.id}>
+                      {campaign.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Select a campaign to automatically assign all uploaded leads to it
+                </p>
               </div>
 
               <div className="text-sm text-gray-600">
