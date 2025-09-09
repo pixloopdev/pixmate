@@ -29,14 +29,28 @@ const Campaigns: React.FC = () => {
       let query = supabase.from('campaigns').select('*');
 
       if (profile?.role === 'staff') {
-        // Staff can only see assigned campaigns
-        query = supabase
+        // Staff can only see campaigns assigned to them
+        const { data: assignments, error: assignmentError } = await supabase
           .from('campaigns')
           .select(`
             *,
-            campaign_assignments!inner(*)
+            campaign_assignments!inner(
+              id,
+              staff_id
+            )
           `)
           .eq('campaign_assignments.staff_id', profile.id);
+
+        if (assignmentError) {
+          console.error('Error fetching staff campaigns:', assignmentError);
+          setCampaigns([]);
+          setLoading(false);
+          return;
+        }
+
+        setCampaigns(assignments || []);
+        setLoading(false);
+        return;
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
