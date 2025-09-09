@@ -556,6 +556,16 @@ const Leads: React.FC = () => {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
+                  {profile?.role === 'superadmin' && (
+                    <th className="px-6 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedLeads.length > 0 && selectedLeads.length === filteredLeads.length}
+                        onChange={handleSelectAll}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </th>
+                  )}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Lead
                   </th>
@@ -581,6 +591,16 @@ const Leads: React.FC = () => {
                   const statusConfig = getStatusConfig(lead.status);
                   return (
                     <tr key={lead.id} className="hover:bg-gray-50">
+                      {profile?.role === 'superadmin' && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedLeads.includes(lead.id)}
+                            onChange={() => handleSelectLead(lead.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="h-10 w-10 flex-shrink-0">
