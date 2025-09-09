@@ -18,6 +18,7 @@ const Leads: React.FC = () => {
   const [newComment, setNewComment] = useState('');
   const [leadComments, setLeadComments] = useState<any[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [editForm, setEditForm] = useState({
     first_name: '',
     last_name: '',
@@ -35,6 +36,22 @@ const Leads: React.FC = () => {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const handleSelectAll = () => {
+    if (selectedLeads.length === filteredLeads.length) {
+      setSelectedLeads([]);
+    } else {
+      setSelectedLeads(filteredLeads.map(lead => lead.id));
+    }
+  };
+
+  const handleSelectLead = (leadId: string) => {
+    setSelectedLeads(prev => 
+      prev.includes(leadId) 
+        ? prev.filter(id => id !== leadId)
+        : [...prev, leadId]
+    );
+  };
 
   const statusOptions = [
     { value: 'new', label: 'New', color: 'bg-blue-100 text-blue-800' },
