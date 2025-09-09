@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Layout from '../components/Layout/Layout';
 import { supabase, Profile, Campaign } from '../lib/supabase';
-import { Users, Megaphone, UserPlus, TrendingUp, BarChart3, Target, Plus, X, AlertCircle, CheckCircle, User, Calendar } from 'lucide-react';
+import { Users, Megaphone, UserPlus, TrendingUp, BarChart3, Target, Plus, X, AlertCircle, CheckCircle, User, Calendar, UserCheck } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { profile } = useAuth();
@@ -12,6 +12,7 @@ const Dashboard: React.FC = () => {
     totalStaff: 0,
     totalCampaigns: 0,
     totalLeads: 0,
+    totalCustomers: 0,
     myLeads: 0,
     myCampaigns: 0,
     newLeads: 0,
@@ -47,11 +48,12 @@ const Dashboard: React.FC = () => {
       setError('');
 
       if (profile?.role === 'superadmin') {
-        // Fetch superadmin stats
-        const [staffResult, campaignResult, leadsResult] = await Promise.all([
+        // Fetch superadmin stats  
+        const [staffResult, campaignResult, leadsResult, customersResult] = await Promise.all([
           supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'staff'),
           supabase.from('campaigns').select('id', { count: 'exact', head: true }),
           supabase.from('leads').select('id', { count: 'exact', head: true }),
+          supabase.from('customers').select('id', { count: 'exact', head: true }),
         ]);
 
         // Check for errors in any of the queries
@@ -67,11 +69,16 @@ const Dashboard: React.FC = () => {
           console.error('Error fetching leads count:', leadsResult.error);
           setError('Failed to fetch leads statistics');
         }
+        if (customersResult.error) {
+          console.error('Error fetching customers count:', customersResult.error);
+          setError('Failed to fetch customers statistics');
+        }
 
         setStats({
           totalStaff: staffResult.count || 0,
           totalCampaigns: campaignResult.count || 0,
           totalLeads: leadsResult.count || 0,
+          totalCustomers: customersResult.count || 0,
           myLeads: 0,
           myCampaigns: 0,
           newLeads: 0,
@@ -106,6 +113,7 @@ const Dashboard: React.FC = () => {
           totalStaff: 0,
           totalCampaigns: 0,
           totalLeads: 0,
+          totalCustomers: 0,
           myLeads: myLeadsResult.count || 0,
           myCampaigns: myCampaignsResult.count || 0,
           newLeads: newLeadsResult.count || 0,
@@ -329,6 +337,13 @@ const Dashboard: React.FC = () => {
       color: 'bg-purple-500',
       description: 'All leads in system',
     },
+    {
+      title: 'Total Customers',
+      value: stats.totalCustomers,
+      icon: UserCheck,
+      color: 'bg-orange-500',
+      description: 'Converted customers',
+    },
   ];
 
   const staffCards = [
@@ -377,7 +392,7 @@ const Dashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {cards.map((card, index) => {
             const Icon = card.icon;
             return (
