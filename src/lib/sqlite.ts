@@ -81,24 +81,28 @@ export const sqlite = {
   // User authentication (simplified)
   auth: {
     signIn: async (email: string, password: string) => {
-      const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-      if (user) {
+      try {
+        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+        if (user) {
         // In a real app, you'd verify the password hash here
-        const profile = db.prepare('SELECT * FROM profiles WHERE id = ?').get(user.id);
-        return { user, profile, error: null };
+          const profile = db.prepare('SELECT * FROM profiles WHERE id = ?').get(user.id) as Profile;
+          return { user, profile, error: null };
+        }
+        return { user: null, profile: null, error: { message: 'Invalid credentials' } };
+      } catch (error: any) {
+        return { user: null, profile: null, error: { message: error.message } };
       }
-      return { user: null, profile: null, error: { message: 'Invalid credentials' } };
     },
     
     signUp: async (email: string, password: string, fullName: string) => {
       try {
-        const userId = `user-${Date.now()}`;
+        const userId = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         // In a real app, you'd hash the password here
         db.prepare('INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)').run(userId, email, password);
         db.prepare('INSERT INTO profiles (id, email, full_name, role) VALUES (?, ?, ?, ?)').run(userId, email, fullName, 'staff');
         return { error: null };
       } catch (error) {
-        return { error: { message: 'User already exists' } };
+        return { error: { message: 'User already exists or registration failed' } };
       }
     },
     
@@ -112,23 +116,35 @@ export const sqlite = {
   from: (table: string) => ({
     select: (columns = '*') => ({
       eq: (column: string, value: any) => {
-        const stmt = db.prepare(`SELECT ${columns} FROM ${table} WHERE ${column} = ?`);
-        const data = stmt.all(value);
-        return { data, error: null };
+        try {
+          const stmt = db.prepare(`SELECT ${columns} FROM ${table} WHERE ${column} = ?`);
+          const data = stmt.all(value);
+          return { data, error: null };
+        } catch (error: any) {
+          return { data: null, error: { message: error.message } };
+        }
       },
       
       single: () => {
-        const stmt = db.prepare(`SELECT ${columns} FROM ${table} LIMIT 1`);
-        const data = stmt.get();
-        return { data, error: null };
+        try {
+          const stmt = db.prepare(`SELECT ${columns} FROM ${table} LIMIT 1`);
+          const data = stmt.get();
+          return { data, error: null };
+        } catch (error: any) {
+          return { data: null, error: { message: error.message } };
+        }
       },
       
       order: (column: string, options: { ascending: boolean }) => ({
         all: () => {
-          const direction = options.ascending ? 'ASC' : 'DESC';
-          const stmt = db.prepare(`SELECT ${columns} FROM ${table} ORDER BY ${column} ${direction}`);
-          const data = stmt.all();
-          return { data, error: null };
+          try {
+            const direction = options.ascending ? 'ASC' : 'DESC';
+            const stmt = db.prepare(`SELECT ${columns} FROM ${table} ORDER BY ${column} ${direction}`);
+            const data = stmt.all();
+            return { data, error: null };
+          } catch (error: any) {
+            return { data: null, error: { message: error.message } };
+          }
         }
       })
     }),
