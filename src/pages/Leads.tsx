@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout/Layout';
 import { supabase, Lead } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { UserPlus, Search, Filter, Upload, Phone, Mail, Building, User, MessageSquare, X, Send } from 'lucide-react';
+import { UserPlus, Search, Filter, Upload, Phone, Mail, Building, User, MessageSquare, X, Send, Trash2 } from 'lucide-react';
 
 const Leads: React.FC = () => {
   const { profile } = useAuth();
