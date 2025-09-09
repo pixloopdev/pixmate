@@ -14,6 +14,8 @@ const StaffManagement: React.FC = () => {
   const [selectedStaff, setSelectedStaff] = useState<Profile | null>(null);
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [assignedCampaigns, setAssignedCampaigns] = useState<any[]>([]);
+  const [showDeleteStaffModal, setShowDeleteStaffModal] = useState(false);
+  const [staffToDelete, setStaffToDelete] = useState<Profile | null>(null);
   const [newStaff, setNewStaff] = useState({
     email: '',
     password: '',
@@ -184,6 +186,50 @@ const StaffManagement: React.FC = () => {
     setSelectedStaff(staff);
     setShowAssignModal(true);
     fetchStaffCampaigns(staff.id);
+  };
+
+  const handleRemoveStaff = (staff: Profile) => {
+    setStaffToDelete(staff);
+    setShowDeleteStaffModal(true);
+  };
+
+  const confirmRemoveStaff = async () => {
+    if (!staffToDelete) return;
+
+    try {
+      // First, remove all campaign assignments for this staff member
+      const { error: assignmentError } = await supabase
+        .from('campaign_assignments')
+        .delete()
+        .eq('staff_id', staffToDelete.id);
+
+      if (assignmentError) {
+        console.error('Error removing campaign assignments:', assignmentError);
+        setError('Failed to remove staff assignments');
+        return;
+      }
+
+      // Then, delete the staff profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', staffToDelete.id);
+
+      if (profileError) {
+        console.error('Error removing staff profile:', profileError);
+        setError('Failed to remove staff member');
+        return;
+      }
+
+      setSuccess('Staff member removed successfully!');
+      setShowDeleteStaffModal(false);
+      setStaffToDelete(null);
+      fetchStaff();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error: any) {
+      console.error('Error removing staff:', error);
+      setError(`Error removing staff: ${error.message}`);
+    }
   };
 
   const filteredStaff = staff.filter(member =>
@@ -515,6 +561,54 @@ const StaffManagement: React.FC = () => {
                 className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Staff Confirmation Modal */}
+      {showDeleteStaffModal && staffToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Remove Staff Member</h2>
+              <button
+                onClick={() => setShowDeleteStaffModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                Are you sure you want to remove <strong>{staffToDelete.full_name || staffToDelete.email}</strong> from your team?
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-yellow-800 text-sm">
+                  <strong>Warning:</strong> This will:
+                </p>
+                <ul className="text-yellow-700 text-sm mt-2 ml-4 list-disc">
+                  <li>Remove all campaign assignments</li>
+                  <li>Delete the staff member's profile</li>
+                  <li>This action cannot be undone</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowDeleteStaffModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveStaff}
+                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Remove Staff Member
               </button>
             </div>
           </div>
