@@ -513,15 +513,26 @@ const Leads: React.FC = () => {
                 : 'Manage your assigned leads'}
             </p>
           </div>
-          {profile?.role === 'superadmin' && (
-            <button 
-              onClick={() => setShowUploadModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-            >
-              <Upload className="h-5 w-5" />
-              <span>Upload CSV</span>
-            </button>
-          )}
+          <div className="flex items-center space-x-3">
+            {profile?.role === 'superadmin' && selectedLeads.length > 0 && (
+              <button 
+                onClick={() => setShowBulkDeleteModal(true)}
+                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <Trash2 className="h-5 w-5" />
+                <span>Delete Selected ({selectedLeads.length})</span>
+              </button>
+            )}
+            {profile?.role === 'superadmin' && (
+              <button 
+                onClick={() => setShowUploadModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+              >
+                <Upload className="h-5 w-5" />
+                <span>Upload CSV</span>
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200">
