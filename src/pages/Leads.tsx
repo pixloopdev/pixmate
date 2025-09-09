@@ -177,32 +177,38 @@ const Leads: React.FC = () => {
         if (newStatus === 'closed_won' && currentLead) {
           console.log('Converting lead to customer:', currentLead);
           try {
+            const customerInsertData = {
+              lead_id: currentLead.id,
+              first_name: currentLead.first_name,
+              last_name: currentLead.last_name,
+              email: currentLead.email,
+              phone: currentLead.phone,
+              company: currentLead.company,
+              position: currentLead.position,
+              notes: currentLead.notes,
+              converted_by: profile?.id,
+              converted_at: new Date().toISOString(),
+            };
+
+            console.log('Inserting customer with data:', customerInsertData);
+
             const { data: customerData, error: customerError } = await supabase
               .from('customers')
-              .insert([{
-                lead_id: currentLead.id,
-                first_name: currentLead.first_name,
-                last_name: currentLead.last_name,
-                email: currentLead.email,
-                phone: currentLead.phone,
-                company: currentLead.company,
-                position: currentLead.position,
-                notes: currentLead.notes,
-                converted_by: profile?.id,
-                converted_at: new Date().toISOString(),
-              }])
+              .insert([customerInsertData])
               .select();
 
             if (customerError) {
-              console.error('Error creating customer:', customerError);
-              setError('Lead status updated but failed to create customer record');
+              console.error('Error creating customer:', customerError.message, customerError.details, customerError.hint);
+              console.error('Customer insert data was:', customerInsertData);
+              console.error('Current profile:', profile);
+              setError(`Lead status updated but failed to create customer record: ${customerError.message}`);
             } else {
               console.log('Customer created successfully:', customerData);
               setSuccess('Lead converted to customer successfully!');
             }
           } catch (customerCreateError) {
-            console.error('Error creating customer:', customerCreateError);
-            setError('Lead status updated but failed to create customer record');
+            console.error('Unexpected error creating customer:', customerCreateError);
+            setError(`Lead status updated but failed to create customer record: ${customerCreateError}`);
           }
         } else {
           setSuccess('Lead status updated successfully!');
