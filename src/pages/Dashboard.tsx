@@ -84,6 +84,20 @@ const Dashboard: React.FC = () => {
           newLeads: 0,
         });
       } else {
+        // Check if profile and profile.id are available before making queries
+        if (!profile?.id) {
+          setStats({
+            totalStaff: 0,
+            totalCampaigns: 0,
+            totalLeads: 0,
+            totalCustomers: 0,
+            myLeads: 0,
+            myCampaigns: 0,
+            newLeads: 0,
+          });
+          return;
+        }
+
         // Fetch staff stats
         const [myLeadsResult, myCampaignsResult, newLeadsResult] = await Promise.all([
           supabase.from('leads').select('id', { count: 'exact', head: true }).eq('assigned_to', profile?.id),
