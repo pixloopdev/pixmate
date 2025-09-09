@@ -91,34 +91,16 @@ const Customers: React.FC = () => {
       setLoading(true);
       
       if (profile.role !== 'superadmin') {
-        // First, get all lead IDs assigned to this staff member
-        const { data: assignedLeads, error: leadsError } = await supabase
-          .from('leads')
-          .select('id')
-          .eq('assigned_to', profile.id);
-
-        if (leadsError) {
-          console.error('Error fetching assigned leads:', leadsError);
-          setCustomers([]);
-          return;
-        }
-
-        const assignedLeadIds = assignedLeads?.map(lead => lead.id) || [];
-        
-        // Build the OR condition for customers
-        let orConditions = [`converted_by.eq.${profile.id}`];
-        if (assignedLeadIds.length > 0) {
-          orConditions.push(`lead_id.in.(${assignedLeadIds.join(',')})`);
-        }
-
+        // For staff, let RLS policy handle the filtering
+        // This will show customers they converted OR from their assigned leads/campaigns
         const { data, error } = await supabase
           .from('customers')
           .select('*')
-          .or(orConditions.join(','))
           .order('converted_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching customers:', error);
+          console.error('Error details:', error.message, error.details, error.hint);
           setCustomers([]);
         } else {
           console.log('Fetched customers:', data);
