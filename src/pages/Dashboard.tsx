@@ -190,6 +190,19 @@ const Dashboard: React.FC = () => {
         email_confirm: true
       });
 
+      // Check if profile and profile.id are available before making queries
+      if (!profile?.id) {
+        setStats({
+          totalStaff: 0,
+          totalCampaigns: 0,
+          totalLeads: 0,
+          myLeads: 0,
+          myCampaigns: 0,
+          newLeads: 0,
+        });
+        return;
+      }
+
       if (authError) {
         setError(authError.message);
         return;
