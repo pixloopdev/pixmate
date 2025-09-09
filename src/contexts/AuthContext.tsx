@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { sqlite, Profile } from '../lib/sqlite';
+import { supabase } from '../lib/supabase';
+import type { User, Session } from '@supabase/supabase-js';
 
-interface User {
+interface Profile {
   id: string;
   email: string;
-}
-
-interface Session {
-  user: User;
+  full_name: string | null;
+  role: 'superadmin' | 'staff' | null;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
@@ -37,16 +38,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session in localStorage
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      const user = JSON.parse(savedUser);
-      setUser(user);
-      setSession({ user });
-      fetchProfile(user.id);
-    } else {
-      setLoading(false);
-    }
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchProfile = async (userId: string) => {
@@ -57,7 +74,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      const { data, error } = sqlite.from('profiles').select('*').eq('id', userId).single();
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
       if (error) {
         console.error('Error fetching profile:', error.message, error.details);
@@ -77,20 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { user, profile, error } = await sqlite.auth.signIn(email, password);
-      
-      if (error) {
-        return { error };
-      }
-      
-      if (user && profile) {
-        setUser(user);
-        setProfile(profile);
-        setSession({ user });
-        localStorage.setItem('currentUser', JSON.stringify(user));
-      }
-      
-      return { error: null };
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error };
     } catch (error: any) {
       return { error: { message: error.message || 'Authentication failed' } };
     }
@@ -98,7 +110,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      const { error } = await sqlite.auth.signUp(email, password, fullName);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
       return { error };
     } catch (error: any) {
       return { error: { message: error.message || 'Registration failed' } };
@@ -106,10 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
-    localStorage.removeItem('currentUser');
-    setUser(null);
-    setProfile(null);
-    setSession(null);
+    await supabase.auth.signOut();
   };
 
   const value = {
