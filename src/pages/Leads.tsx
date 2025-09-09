@@ -19,6 +19,7 @@ const Leads: React.FC = () => {
   const [leadComments, setLeadComments] = useState<any[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [editForm, setEditForm] = useState({
     first_name: '',
     last_name: '',
@@ -227,6 +228,29 @@ const Leads: React.FC = () => {
     } catch (error) {
       console.error('Unexpected error updating lead status:', error);
       setError('An unexpected error occurred while updating the lead status.');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedLeads.length === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .in('id', selectedLeads);
+
+      if (error) {
+        setError(`Error deleting leads: ${error.message}`);
+      } else {
+        setSuccess(`Successfully deleted ${selectedLeads.length} leads!`);
+        setSelectedLeads([]);
+        setShowBulkDeleteModal(false);
+        fetchLeads();
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (error: any) {
+      setError(`Error deleting leads: ${error.message}`);
     }
   };
 
