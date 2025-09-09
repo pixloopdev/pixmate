@@ -365,7 +365,12 @@ const StaffManagement: React.FC = () => {
                       >
                         Assign Campaigns
                       </button>
-                      <button className="text-red-600 hover:text-red-900">Remove</button>
+                      <button 
+                        onClick={() => handleRemoveStaff(member)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Remove
+                      </button>
                     </td>
                   </tr>
                 ))}
